@@ -87,3 +87,22 @@ jobs:
 
             # Executa o script de deploy (que agora não precisa mais do artefato)
             ./deploy.sh
+
+      - name: Notify Slack on Deploy Status
+        # A condição 'always()' garante que este passo sempre será executado,
+        # independentemente do sucesso ou falha dos passos anteriores.
+        if: always()
+        # Action popular e confiável para enviar notificações para o Slack.
+        uses: rtCamp/action-slack-notify@v2.2.0
+        with:
+          # O webhook URL deve ser armazenado como um secret no GitHub.
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # O status do job ('success' ou 'failure') é usado para customizar a notificação.
+          status: ${{ job.status }}
+          author_name: "Deploy para Produção"
+          channel: "#deploys" # Opcional: Especifique o canal, ou deixe o padrão do webhook.
+          message: |
+            O deploy da tag `${{ github.ref_name }}` para o ambiente de produção foi finalizado.
+            Commit: `${{ github.sha }}`
+            Acesse a Action: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Ver detalhes>
+          footer: "Workflow disparado por @${{ github.actor }}"

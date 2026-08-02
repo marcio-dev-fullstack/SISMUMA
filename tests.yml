@@ -43,7 +43,6 @@ jobs:
           path: vendor
 
   test:
-    name: Run PHPUnit Tests
     name: Run Unit Tests
     needs: setup # Depende do job de setup
     runs-on: ubuntu-latest
@@ -73,7 +72,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
 
-      # Etapa 3: Configurar o Ambiente PHP
       - name: Download vendor dependencies
         uses: actions/download-artifact@v4
         with:
@@ -85,21 +83,7 @@ jobs:
         with:
           php-version: "8.3"
           extensions: pdo, pdo_pgsql, bcmath, pcntl, zip, gd # Extensões do seu Dockerfile
-          tools: composer:v2
           coverage: none # Desabilita a geração de cobertura, que não está sendo usada
-
-      # Etapa 4: Cache das Dependências
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      # Etapa 5: Instalar Dependências
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress
 
       # Etapa 6: Preparar a Aplicação
       - name: Copy .env
@@ -119,7 +103,6 @@ jobs:
           DB_PASSWORD: password
 
   lint:
-    name: Run Code Style Linter
     name: Run Code Style Check (Pint)
     needs: setup # Depende do job de setup
     runs-on: ubuntu-latest
@@ -137,15 +120,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          tools: composer:v2
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress
 
       - name: Run Laravel Pint
         run: ./vendor/bin/pint --test
 
   security:
-    name: Run Static Security Analysis
     name: Run Static Analysis (PHPStan)
     needs: setup # Depende do job de setup
     runs-on: ubuntu-latest
@@ -163,10 +142,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          tools: composer:v2
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress
 
       - name: Run PHPStan Security Scan
         # O --no-progress e --error-format=github fazem a saída ser bem integrada com o GitHub Actions
