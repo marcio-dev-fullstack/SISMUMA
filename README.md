@@ -1,4 +1,4 @@
-# 🌳 SEMARH Fiscaliza 1.0
+# 🌳 SISMUMA Sistema Municipal de Meio Ambiente 1.0
 
 ![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel)
 ![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php)
@@ -6,7 +6,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
 ![Livewire](https://img.shields.io/badge/Livewire-3.x-4E56A6?style=for-the-badge&logo=livewire)
 
-O **SEMARH Fiscaliza** é um sistema integrado e moderno para gestão e fiscalização ambiental, projetado para secretarias municipais de meio ambiente. Ele digitaliza e otimiza processos, desde o licenciamento até a fiscalização em campo, utilizando tecnologias de ponta para garantir eficiência, transparência e segurança.
+O **SISMUMA Sistema Municipal de Meio Ambiente 1.0** é um sistema integrado e moderno para gestão e fiscalização ambiental, projetado para secretarias municipais de meio ambiente. Ele digitaliza e otimiza processos, desde o licenciamento até a fiscalização em campo, utilizando tecnologias de ponta para garantir eficiência, transparência e segurança.
 
 ---
 
