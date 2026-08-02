@@ -11,10 +11,34 @@ on:
 
 # Jobs
 jobs:
+  # Job para verificar quais arquivos foram alterados no Pull Request.
+  # Ele determina se os jobs de PHP precisam ser executados.
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    # Define saídas (outputs) que outros jobs podem usar.
+    outputs:
+      php: ${{ steps.filter.outputs.php }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3.0.2
+        id: filter
+        with:
+          filters: |
+            php:
+              - '**.php'
+              - 'composer.json'
+              - 'composer.lock'
+
   # Job de Setup: Prepara o ambiente e instala as dependências uma única vez.
   setup:
     name: Setup Environment
     runs-on: ubuntu-latest
+    needs: changes # Depende do job 'changes'.
+    if: needs.changes.outputs.php == 'true' # Só executa se arquivos PHP foram alterados.
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
@@ -45,6 +69,9 @@ jobs:
   test:
     name: Run Unit Tests
     needs: setup # Depende do job de setup
+    # Depende do setup e só executa se arquivos PHP foram alterados.
+    needs: [changes, setup]
+    if: needs.changes.outputs.php == 'true'
     runs-on: ubuntu-latest
 
     # Etapa 1: Configurar o Serviço de Banco de Dados
@@ -105,6 +132,9 @@ jobs:
   lint:
     name: Run Code Style Check (Pint)
     needs: setup # Depende do job de setup
+    # Depende do setup e só executa se arquivos PHP foram alterados.
+    needs: [changes, setup]
+    if: needs.changes.outputs.php == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -127,6 +157,9 @@ jobs:
   security:
     name: Run Static Analysis (PHPStan)
     needs: setup # Depende do job de setup
+    # Depende do setup e só executa se arquivos PHP foram alterados.
+    needs: [changes, setup]
+    if: needs.changes.outputs.php == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
