@@ -1,0 +1,9 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+    # O nível de análise, de 0 (mais baixo) a 9 (mais estrito).
+    # Comece com um nível mais baixo e aumente conforme corrige os erros.
+    level: 5

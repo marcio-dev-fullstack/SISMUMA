@@ -27,17 +27,35 @@ log_error() { echo -e "${RED}❌ ERRO: $1${NC}" >&2; exit 1; }
 log_info() { echo -e "${YELLOW}▶ $1${NC}"; }
 log_header() { echo -e "\n${BLUE}--- $1 ---${NC}"; }
 
+# --- Funções de Qualidade de Código ---
+run_quality_checks() {
+    log_header "EXECUTANDO VERIFICAÇÕES DE QUALIDADE"
+    
+    log_info "Verificando estilo de código com Laravel Pint..."
+    if ! ./vendor/bin/pint --test; then
+        log_error "O Pint encontrou problemas de estilo. Corrija-os antes de continuar. Você pode rodar './vendor/bin/pint' para corrigir automaticamente."
+    fi
+    log_success "Código está no padrão do projeto."
+
+    log_info "Analisando código com PHPStan..."
+    if ! ./vendor/bin/phpstan analyse --memory-limit=2G; then
+        log_error "O PHPStan encontrou erros. Corrija-os antes de continuar."
+    fi
+    log_success "Análise estática passou com sucesso."
+}
+
 # --- Início do Script ---
 clear
-echo "================================================="
-echo "  Assistente de Submissão Git - SEMARH Fiscaliza"
-echo "================================================="
+echo "=================================================" && echo "  Assistente de Submissão Git - SEMARH Fiscaliza" && echo "================================================="
 echo
 
 # 1. Verificar se há alterações para commitar
 if git diff-index --quiet HEAD --; then
     log_error "Nenhuma alteração encontrada para commitar. Faça suas alterações antes de rodar o script."
 fi
+
+# 1.5. Executar verificações de qualidade antes de continuar
+run_quality_checks
 
 # 2. Verificar e/ou criar a branch de trabalho
 log_header "VERIFICANDO BRANCH DE TRABALHO"
@@ -58,12 +76,13 @@ if [ "$CURRENT_BRANCH" == "main" ] || [ "$CURRENT_BRANCH" == "master" ]; then
 
     # Nome da branch
     read -p "Digite um nome curto para a branch (ex: login-gov-br): " BRANCH_NAME
-    if [ -z "$BRANCH_NAME" ]; then
-        log_error "O nome da branch não pode estar vazio."
-    fi
 
     # Formata o nome para ser URL-friendly (minúsculas, hífens)
     BRANCH_NAME=$(echo "$BRANCH_NAME" | iconv -t ascii//TRANSLIT | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)
+    
+    if [ -z "$BRANCH_NAME" ]; then
+        log_error "O nome da branch não pode ser vazio ou conter apenas caracteres especiais."
+    fi
     
     NEW_BRANCH_NAME="$BRANCH_TYPE/$BRANCH_NAME"
     
@@ -120,13 +139,21 @@ log_success "Commit realizado com sucesso."
 
 log_header "ATUALIZANDO BRANCH E ENVIANDO"
 
-log_info "Buscando as últimas alterações da branch 'main'..."
-git fetch upstream main
+# Detecta o remote principal (upstream ou origin)
+if git remote | grep -q '^upstream$'; then
+    MAIN_REMOTE="upstream"
+else
+    log_info "Remote 'upstream' não encontrado. Usando 'origin' como principal."
+    MAIN_REMOTE="origin"
+fi
+
+log_info "Buscando as últimas alterações de '$MAIN_REMOTE/main'..."
+git fetch $MAIN_REMOTE main
 
 echo "Como você deseja integrar as alterações da 'main' na sua branch?"
 echo "(Rebase é o recomendado pelo projeto para manter o histórico linear)"
 
-select UPDATE_STRATEGY in "Rebase" "Merge"; do
+select UPDATE_STRATEGY in "Rebase (Recomendado)" "Merge"; do
     if [ -n "$UPDATE_STRATEGY" ]; then
         break
     else
@@ -134,21 +161,27 @@ select UPDATE_STRATEGY in "Rebase" "Merge"; do
     fi
 done
 
-if [ "$UPDATE_STRATEGY" == "Rebase" ]; then
-    log_info "Executando rebase com 'upstream/main'..."
-    git rebase upstream/main
+if [[ "$UPDATE_STRATEGY" == "Rebase"* ]]; then
+    log_info "Executando rebase com '$MAIN_REMOTE/main'..."
+    if ! git rebase "$MAIN_REMOTE/main"; then
+        log_error "Conflito durante o rebase. Resolva os conflitos e depois execute 'git rebase --continue'. Para abortar, use 'git rebase --abort'."
+    fi
     log_success "Rebase concluído."
-    log_info "Enviando alterações com --force-with-lease (necessário após rebase)..."
-    git push --force-with-lease origin "$CURRENT_BRANCH"
-    log_success "Push realizado com sucesso para a branch '$CURRENT_BRANCH'."
+    log_info "Enviando alterações para 'origin/$CURRENT_BRANCH'..."
+    # Usa --force-with-lease se a branch já existir no remoto, senão faz um push normal com -u
+    if git ls-remote --exit-code --heads origin "$CURRENT_BRANCH" > /dev/null; then
+        git push --force-with-lease origin "$CURRENT_BRANCH"
+    else
+        git push -u origin "$CURRENT_BRANCH"
+    fi
 else
-    log_info "Executando merge com 'upstream/main'..."
-    git merge upstream/main
+    log_info "Executando merge com '$MAIN_REMOTE/main'..."
+    git merge "$MAIN_REMOTE/main"
     log_success "Merge concluído."
-    log_info "Enviando alterações com push padrão..."
-    git push origin "$CURRENT_BRANCH"
-    log_success "Push realizado com sucesso para a branch '$CURRENT_BRANCH'."
+    log_info "Enviando alterações para 'origin/$CURRENT_BRANCH'..."
+    git push -u origin "$CURRENT_BRANCH"
 fi
+log_success "Push realizado com sucesso!"
 
 # --- Finalização ---
 echo

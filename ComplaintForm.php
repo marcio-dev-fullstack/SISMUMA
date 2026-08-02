@@ -36,7 +36,8 @@ class ComplaintForm extends Component
 
         // Placeholder: Lógica para salvar a denúncia e a foto no banco de dados.
         // Ex:
-        // $path = $this->photo ? $this->photo->store('complaints', 'public') : null;
+        // O método store() agora usará o disco padrão (s3) definido no .env
+        // $path = $this->photo ? $this->photo->store('complaints-evidence', 's3') : null;
         // Denuncia::create([
         //     'descricao' => $this->description,
         //     'localizacao' => $this->location,

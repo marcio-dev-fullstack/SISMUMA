@@ -33,6 +33,7 @@ show_menu() {
     echo "5) Acessar Terminal do Container (Bash)"
     echo "6) Rodar Migrations (Artisan Migrate)"
     echo "7) Listar Rotas (Artisan Route List)"
+    echo "8) Instalar Dependências (Composer Install)"
     echo "q) Sair"
     echo ""
 }
@@ -70,6 +71,10 @@ while true; do # Loop infinito
         7)
             echo -e "${BLUE}Listando rotas da aplicação...${NC}"
             $COMPOSE_COMMAND exec app php artisan route:list
+            ;;
+        8)
+            echo -e "${GREEN}Instalando dependências do Composer...${NC}"
+            $COMPOSE_COMMAND run --rm app composer install --ignore-platform-reqs --no-blocking
             ;;
         [qQ])
             echo -e "${GREEN}Saindo...${NC}"

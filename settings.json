@@ -1,26 +1,18 @@
 {
-  // Configurações do Workspace para o projeto SEMARH Fiscaliza
-
-  // Define o perfil de terminal padrão para o Windows como "Git Bash".
-  // Isso garante que os scripts .sh (como install.sh e gerenciar.sh)
-  // funcionem corretamente sem que o desenvolvedor precise trocar manualmente o terminal.
   "terminal.integrated.defaultProfile.windows": "Git Bash",
-
-  // Associações de arquivos para melhorar o realce de sintaxe.
   "files.associations": {
     ".env.example": "ini"
   },
-
-  // Define o idioma de exibição do VS Code para Português (Brasil).
-  "locale": "pt-br",
-
-  // --- Configurações para Integração com Docker ---
-  // As configurações abaixo instruem as extensões PHP a executarem
-  // seus comandos dentro do contêiner Docker da aplicação.
-
-  // Para a extensão PHP CS Fixer (ex: "junstyle.php-cs-fixer")
-  "php-cs-fixer.docker": true,
-  "php-cs-fixer.executablePath": "php-cs-fixer", // O nome do executável dentro do container
-  "php-cs-fixer.onsave": true,
-  "php-cs-fixer.allowRisky": true
+  "locale": "pt-br"
+  ,
+  // --- Configurações do Formatador (Laravel Pint) ---
+  "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
+    "editor.formatOnSave": true
+  },
+  // Habilita a execução do Pint via Docker
+  "laravel-pint.enableDocker": true,
+  // Comando para executar o Pint dentro do contêiner
+  // Usamos os mesmos arquivos de compose do script gerenciar.ps1
+  "laravel-pint.dockerCommand": "docker compose -f docker-compose.yml -f docker-compose.override.yml exec -T app"
 }

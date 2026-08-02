@@ -47,6 +47,8 @@ jobs:
         uses: docker/build-push-action@v6.5.0
         with:
           context: .
+          file: ./Dockerfile
+          target: production_build # Especifica o estágio de build de produção
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

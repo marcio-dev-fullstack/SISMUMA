@@ -1,29 +1,19 @@
 {
-  // Lista de extensões recomendadas para o projeto SEMARH Fiscaliza.
-  // O VS Code irá sugerir a instalação destas extensões ao abrir o workspace.
   "recommendations": [
-    // Essenciais para PHP e Laravel
-    "bmewburn.vscode-intelephense-client", // IntelliSense avançado para PHP
-    "xdebug.php-debug", // Suporte para depuração com Xdebug
-    "onecentlin.laravel-extension-pack", // Pacote com várias extensões úteis para Laravel
-    "ryannaddy.laravel-extra-intellisense", // Autocompletar para rotas, views, etc.
-    "shufo.vscode-blade-formatter", // Formatador para arquivos Blade
-
-    // Suporte para o Frontend Stack
-    "livewire.livewire-vscode", // Suporte oficial para Livewire
-    "esbenp.prettier-vscode", // Formatador de código para JS, CSS, etc.
-
-    // Ferramentas de Desenvolvimento e Infraestrutura
-    "ms-azuretools.vscode-docker", // Gerenciamento de contêineres Docker
-    "cweijan.vscode-postgresql-client2", // Cliente para se conectar ao banco de dados PostgreSQL
-
-    // Qualidade de Código e Utilitários
-    "eamodio.gitlens", // Superpoderes para o Git (histórico, autoria, etc.)
-    "EditorConfig.EditorConfig", // Mantém a consistência de codificação entre editores
-    "aaron-bond.better-comments", // Comentários mais legíveis e destacados
-    "bierner.markdown-mermaid" // Suporte para renderizar os diagramas Mermaid (dos arquivos .md)
+    "bmewburn.vscode-intelephense-client",
+    "xdebug.php-debug",
+    "onecentlin.laravel-extension-pack",
+    "ryannaddy.laravel-extra-intellisense",
+    "shufo.vscode-blade-formatter",
+    "livewire.livewire-vscode",
+    "esbenp.prettier-vscode",
+    "ms-azuretools.vscode-docker",
+    "cweijan.vscode-postgresql-client2",
+    "eamodio.gitlens",
+    "EditorConfig.EditorConfig",
+    "aaron-bond.better-comments",
+    "bierner.markdown-mermaid",
+    "open-southeners.laravel-pint" // Formatador de código para Laravel
   ],
-  // Lista de extensões que não são recomendadas para este workspace.
-  // Útil para evitar conflitos, por exemplo, se houver múltiplos formatadores.
   "unwantedRecommendations": []
 }

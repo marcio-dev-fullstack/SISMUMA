@@ -11,8 +11,41 @@ on:
 
 # Jobs
 jobs:
+  # Job de Setup: Prepara o ambiente e instala as dependências uma única vez.
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Upload vendor directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor-dependencies
+          path: vendor
+
   test:
     name: Run PHPUnit Tests
+    name: Run Unit Tests
+    needs: setup # Depende do job de setup
     runs-on: ubuntu-latest
 
     # Etapa 1: Configurar o Serviço de Banco de Dados
@@ -41,6 +74,12 @@ jobs:
         uses: actions/checkout@v4.1.7
 
       # Etapa 3: Configurar o Ambiente PHP
+      - name: Download vendor dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor-dependencies
+          path: vendor
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -81,10 +120,19 @@ jobs:
 
   lint:
     name: Run Code Style Linter
+    name: Run Code Style Check (Pint)
+    needs: setup # Depende do job de setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
+
+      - name: Download vendor dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor-dependencies
+          path: vendor
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -92,5 +140,34 @@ jobs:
           tools: composer:v2
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress
+
       - name: Run Laravel Pint
         run: ./vendor/bin/pint --test
+
+  security:
+    name: Run Static Security Analysis
+    name: Run Static Analysis (PHPStan)
+    needs: setup # Depende do job de setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+
+      - name: Download vendor dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor-dependencies
+          path: vendor
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPStan Security Scan
+        # O --no-progress e --error-format=github fazem a saída ser bem integrada com o GitHub Actions
+        run: ./vendor/bin/phpstan analyse --no-progress --error-format=github
