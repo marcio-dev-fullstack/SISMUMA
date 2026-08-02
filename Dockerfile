@@ -1,66 +1,71 @@
 # ==========================================
-# ESTÁGIO 1: Construtor (Builder)
+# ESTÁGIO 1: Base (PHP com extensões)
 # ==========================================
-FROM php:8.3-fpm-alpine AS builder
+FROM php:8.3-fpm-alpine AS base
 
 # Instala as dependências de compilação necessárias para as extensões PHP
 RUN apk add --no-cache \
     build-base \
-    git \
-    curl \
-    unzip \
     libzip-dev \
     oniguruma-dev \
     postgresql-dev \
     gd-dev \
     freetype-dev \
-    postgresql-libs \
     libjpeg-turbo-dev \
     libpng-dev
-
-# Instala o Xdebug (será habilitado apenas em desenvolvimento)
-RUN pecl install xdebug && docker-php-ext-enable xdebug
 
 # Configura e instala extensões do PHP requeridas pelo Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql bcmath pcntl zip gd
 
-# Copia o executável do Composer mais recente para dentro do container
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Limpa os pacotes de compilação para manter a imagem base enxuta
+RUN apk del build-base
+
+# ==========================================
+# ESTÁGIO 2: Desenvolvimento (Development)
+# ==========================================
+FROM base AS development
+WORKDIR /var/www/html
+
+# Instala dependências de desenvolvimento (git, curl, etc.) e o Xdebug
+RUN apk add --no-cache git curl unzip postgresql-libs \
+    && pecl install xdebug && docker-php-ext-enable xdebug
 
 WORKDIR /var/www/html
 
-# Cria o usuário laravel para evitar problemas de permissão com o Composer
-RUN addgroup -g 1000 laravel && adduser -u 1000 -G laravel -s /bin/sh -D laravel
+# Copia o executável do Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copia os arquivos de dependência primeiro para aproveitar o cache do Docker
-COPY --chown=laravel:laravel composer.json composer.lock ./
+# Cria um usuário não-root para executar a aplicação
+RUN addgroup -g 1000 -S laravel && adduser -u 1000 -S laravel -G laravel
+USER laravel
 
-# Instala as dependências. Esta camada será cacheada se composer.lock não mudar.
-RUN composer install --no-interaction --no-progress --no-dev --optimize-autoloader --no-scripts --no-plugins --ignore-platform-reqs \
-    && composer clear-cache -s
-
-# Copia o restante dos arquivos da aplicação
 COPY --chown=laravel:laravel . .
 
 # ==========================================
-# ESTÁGIO 2: Produção (Final)
+# ESTÁGIO 3: Construtor de Produção (Builder)
 # ==========================================
-FROM php:8.3-fpm-alpine AS production
+FROM base AS builder
+WORKDIR /var/www/html
+
+# Instala o Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copia apenas os arquivos do Composer para aproveitar o cache do Docker
+COPY composer.json composer.lock ./
+
+# Instala as dependências do Composer para produção
+RUN composer install --no-interaction --no-progress --no-dev --optimize-autoloader
+COPY . .
+# ==========================================
+# ESTÁGIO 4: Produção (Final)
+# ==========================================
+FROM base AS production
 WORKDIR /var/www/html
 
 # Instala apenas as dependências de execução, limpa o cache e cria o usuário em uma única camada
-RUN apk add --no-cache nginx supervisor postgresql-libs libzip libpng libjpeg-turbo freetype \
-    && rm -rf /var/cache/apk/* \
-    && addgroup -g 101 -S www-data-group || true \
-    && adduser -u 101 -S -G www-data-group www-data || true
-
-# Copia as extensões PHP já compiladas do estágio 'builder' (Evita o erro de falta do libpq-fe.h)
-COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
-
-# Copia a configuração personalizada do Xdebug para habilitar a depuração remota
-COPY docker/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN apk add --no-cache nginx supervisor postgresql-libs \
+    && adduser -u 82 -S -G www-data www-data
 
 # Copia os arquivos do projeto vindos do construtor com as permissões corretas
 # Graças ao .dockerignore, esta cópia não inclui mais arquivos de desenvolvimento.
@@ -73,7 +78,7 @@ COPY docker/start-production.sh* /usr/local/bin/start.sh
 
 # Garante permissões de escrita para pastas de armazenamento e logs do Laravel
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
     && if [ -f /usr/local/bin/start.sh ]; then chmod +x /usr/local/bin/start.sh; fi
 
 EXPOSE 80

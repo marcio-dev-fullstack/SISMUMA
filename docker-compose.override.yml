@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  # Sobrepõe o serviço 'app' para o ambiente de desenvolvimento
+  app:
+    build:
+      # Constrói o estágio 'development' do Dockerfile
+      target: development
+    ports:
+      # Mapeia a porta 9003 se você precisar de acesso externo ao Xdebug,
+      # mas para o VS Code não é estritamente necessário.
+      - "${XDEBUG_PORT:-9003}:${XDEBUG_PORT:-9003}"
+    environment:
+      # Habilita o Xdebug
+      - XDEBUG_MODE=develop,debug
+      # Configurações para o Xdebug se conectar ao seu editor
+      - XDEBUG_CONFIG=client_host=host.docker.internal client_port=${XDEBUG_PORT:-9003}
+
+  # O serviço 'worker' não precisa de Xdebug, então não o sobrepomos.
+  # Ele continuará usando a imagem de produção, que é mais leve.

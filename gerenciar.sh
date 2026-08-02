@@ -17,6 +17,11 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # Sem cor
 
+# Define a base do comando Docker Compose para incluir o arquivo de override.
+# Isso garante que as configurações de desenvolvimento (como o Xdebug) sejam sempre aplicadas.
+COMPOSE_COMMAND="docker-compose -f docker-compose.yml -f docker-compose.override.yml"
+
+
 show_menu() {
     clear
     echo -e "${BLUE}=== SEMARH DESKTOP - Painel de Gerenciamento ===${NC}"
@@ -27,6 +32,7 @@ show_menu() {
     echo "4) Ver Logs da Aplicação"
     echo "5) Acessar Terminal do Container (Bash)"
     echo "6) Rodar Migrations (Artisan Migrate)"
+    echo "7) Listar Rotas (Artisan Route List)"
     echo "q) Sair"
     echo ""
 }
@@ -38,28 +44,32 @@ while true; do # Loop infinito
     case $opcao in
         1)
             echo -e "${GREEN}Iniciando os contêineres...${NC}"
-            docker-compose up -d
+            $COMPOSE_COMMAND up -d --build --remove-orphans
             ;;
         2)
             echo -e "${RED}Parando e removendo os contêineres...${NC}"
-            docker-compose down
+            $COMPOSE_COMMAND down
             ;;
         3)
             echo -e "${BLUE}Reiniciando o ambiente...${NC}"
-            docker-compose restart
+            $COMPOSE_COMMAND restart
             ;;
         4)
             echo -e "${BLUE}Exibindo logs (Pressione Ctrl+C para sair)...${NC}"
-            docker-compose logs -f
+            $COMPOSE_COMMAND logs -f app
             ;;
         5)
             # Ajuste o nome do serviço 'app' se no seu docker-compose.yml for diferente (ex: 'web', 'laravel')
             echo -e "${GREEN}Entrando no container da aplicação...${NC}"
-            docker-compose exec app bash || docker-compose exec web bash
+            $COMPOSE_COMMAND exec app bash
             ;;
         6)
             echo -e "${BLUE}Rodando as migrações do banco de dados...${NC}"
-            docker-compose exec app php artisan migrate || docker-compose exec web php artisan migrate
+            $COMPOSE_COMMAND exec app php artisan migrate
+            ;;
+        7)
+            echo -e "${BLUE}Listando rotas da aplicação...${NC}"
+            $COMPOSE_COMMAND exec app php artisan route:list
             ;;
         [qQ])
             echo -e "${GREEN}Saindo...${NC}"
